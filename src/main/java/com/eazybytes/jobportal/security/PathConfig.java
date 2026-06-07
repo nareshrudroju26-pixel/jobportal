@@ -12,7 +12,10 @@ public class PathConfig {
     public List<String> publicPaths(){
         return List.of(
                 "/api/auth/login/public",
+                "/api/auth/register/public",
+                "/api/companies/public",
                 "/api/contacts/public",
+                "/api/csrf-token/public",
                 "/api/contacts",
                 "/api/v3/api-docs/**",
                 "/api/v3/api-docs/**",
@@ -27,7 +30,6 @@ public class PathConfig {
     @Bean(name = "protectedPaths")
     public List<String> protectedPaths(){
         return List.of(
-                "/api/companies/public",
                 "/api/**"
         );
     }

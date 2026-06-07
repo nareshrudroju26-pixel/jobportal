@@ -2,6 +2,7 @@ package com.eazybytes.jobportal.security.util;
 
 
 import com.eazybytes.jobportal.constants.ApplicationConstants;
+import com.eazybytes.jobportal.entity.JobPortalUser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
@@ -22,14 +23,16 @@ public class JwtUtil {
 
     public String generateJwtToken(Authentication authentication){
        String jwtToken;
-       var fetchedUser = (User)authentication.getPrincipal();
+       var fetchedUser = (JobPortalUser)authentication.getPrincipal();
         String secret = environment.getProperty(ApplicationConstants.JWT_SECRET_KEY, ApplicationConstants.JWT_SECRET_DEFAULT_VALUE);
         SecretKey secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         jwtToken = Jwts.builder()
                 .issuer("Job Portal")
                 .issuedAt(new java.util.Date())
                 .setSubject("Jwt Token")
-                .claim("username", fetchedUser.getUsername())
+                .claim("email", fetchedUser.getEmail())
+                .claim("mobileNumber", fetchedUser.getMobileNumber())
+                .claim("name", fetchedUser.getName())
                 .claim("roles", authentication.getAuthorities().stream().map(auth -> auth.getAuthority()).collect(Collectors.joining(",")))
                 .expiration(new java.util.Date(new java.util.Date().getTime() + 24*60*60*1000))
                 .signWith(secretKey)
