@@ -14,9 +14,7 @@ public class PathConfig {
                 "/api/auth/login/public",
                 "/api/auth/register/public",
                 "/api/companies/public",
-                "/api/contacts/public",
                 "/api/csrf-token/public",
-                "/api/contacts",
                 "/api/v3/api-docs/**",
                 "/api/v3/api-docs/**",
                 "/swagger-ui.html",
@@ -31,6 +29,16 @@ public class PathConfig {
     public List<String> protectedPaths(){
         return List.of(
                 "/api/**"
+        );
+    }
+
+    @Bean(name = "adminPaths")
+    public List<String> adminPaths() {
+        return List.of(
+                "/api/contacts/admin",
+                "/api/contacts/sort/admin",
+                "/api/contacts/page/admin",
+                "/api/contacts/${id}/status/admin"
         );
     }
 }
