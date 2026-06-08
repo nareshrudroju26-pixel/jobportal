@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,6 +15,15 @@ import java.util.List;
 @Entity
 @Table(name = "companies")
 //@Getter @Setter
+/*@NamedQueries({
+        @NamedQuery(name = "Company.findAllWithJobsByStatusNamed",
+                query = "SELECT DISTINCT c FROM Company c JOIN FETCH c.jobs j WHERE j.status=:status")
+})
+@NamedNativeQueries({
+        @NamedNativeQuery(name = "Company.findAllWithJobsByStatusNativeNamed",
+                query =  "SELECT DISTINCT c.* FROM companies c JOIN  jobs j ON c.id=j.company_id WHERE j.status=?",
+                resultClass = Company.class)
+})*/
 public class Company extends BaseEntity {
 
     @Id
@@ -51,7 +62,14 @@ public class Company extends BaseEntity {
     @Column(name = "WEBSITE", length = 500)
     private String website;
 
+    /*
+    For @ManyToOne/@OneToOne → Hibernate always uses a JOIN in the main query.
+    For @OneToMany  → Hibernate's default strategy is not to JOIN by default.
+    Instead, it often uses a secondary select (one query per collection) unless configured otherwise.
+   */
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 10) // Adjust the batch size as needed
+   // @SQLRestriction("status = 'ACTIVE'") // Filter to include only active jobs
     private List<Job> jobs = new ArrayList<>();
 
     public Long getId() {

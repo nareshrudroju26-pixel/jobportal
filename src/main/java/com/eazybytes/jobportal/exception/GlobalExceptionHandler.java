@@ -47,4 +47,12 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(errorMap,  HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(RegistrationValidationException.class)
+    public ResponseEntity<Map<String, String>> handleRegistrationException(
+            RegistrationValidationException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ex.getErrors());
+    }
 }
