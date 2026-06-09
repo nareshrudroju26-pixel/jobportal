@@ -25,6 +25,7 @@ public class CompanyServiceImpl implements ICompanyService {
 
     private final CompanyRepository companyRepository;
 
+
     @Override
     public List<CompanyDto> getAllCompanies() {
         List<Company> companyList =companyRepository.fetchCompaniesWithJobsByStatus(ApplicationConstants.JOB_STATUS_ACTIVE);
