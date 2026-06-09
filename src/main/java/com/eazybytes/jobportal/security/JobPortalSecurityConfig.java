@@ -47,6 +47,12 @@ public class JobPortalSecurityConfig {
     @Qualifier("adminPaths")
     private final List<String> adminPaths;
 
+    @Qualifier("employerPaths")
+    private final List<String> employerPaths;
+
+    @Qualifier("jobseekerPaths")
+    private final List<String> jobseekerPaths;
+
     @Bean
     public SecurityFilterChain securityConfig(HttpSecurity http){
         return http
@@ -57,6 +63,8 @@ public class JobPortalSecurityConfig {
                         {
                             publicPaths.forEach(path -> requests.requestMatchers(path).permitAll());
                             adminPaths.forEach(path -> requests.requestMatchers(path).hasRole("ADMIN"));
+                            employerPaths.forEach(path -> requests.requestMatchers(path).hasRole("EMPLOYER"));
+                            jobseekerPaths.forEach(path -> requests.requestMatchers(path).hasRole("JOB_SEEKER"));
                             protectedPaths.forEach(path -> requests.requestMatchers(path).authenticated());
                             requests.anyRequest().denyAll();
                         }
@@ -84,7 +92,7 @@ public class JobPortalSecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5173")); // Replace with your allowed origins
         configuration.setAllowedHeaders(Collections.singletonList("*")); // Allow all headers
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L); // Set max age for preflight requests
 
