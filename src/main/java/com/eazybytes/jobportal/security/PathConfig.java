@@ -44,7 +44,7 @@ public class PathConfig {
                 "/api/companies/${id}/admin",
                 "/api/users/search/admin",
                 "/api/users/${userId}/role/employer/admin",
-                "/api/users/${userId}/role/employer/admin"
+                "/api/users/${userId}/company/${companyId}/admin"
         );
     }
 
