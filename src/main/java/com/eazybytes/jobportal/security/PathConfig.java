@@ -47,5 +47,4 @@ public class PathConfig {
                 "/api/users/${userId}/company/${companyId}/admin"
         );
     }
-
 }
