@@ -6,6 +6,7 @@ import com.eazybytes.jobportal.dto.ContactRequestDto;
 import com.eazybytes.jobportal.dto.ContactResponseDto;
 import com.eazybytes.jobportal.entity.Contact;
 import com.eazybytes.jobportal.repository.ContactRepository;
+import com.eazybytes.jobportal.util.ApplicationUtility;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -20,10 +22,12 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ContactServiceImpl implements IContactService {
 
     private final ContactRepository contactRepository;
 
+    @Transactional
     @Override
     public boolean saveContact(ContactRequestDto contactRequestDto) {
         Contact contact = contactRepository.save(tranformToEntity(contactRequestDto));
@@ -75,16 +79,23 @@ public class ContactServiceImpl implements IContactService {
         return responseDtoPage;
     }
 
+    @Transactional
     @Override
     public boolean closeContactMsg(Long id, String status) {
-        Contact contact = contactRepository.findById(id).orElse(null);
+        /*Contact contact = contactRepository.findById(id).orElse(null);
         if (contact == null) {
             return false;
         } else {
             contact.setStatus(status);
             contactRepository.save(contact);
         }
-        return true;
+        return true;*/
+
+        // 1 - Update Status
+        // 2 - Insert in another table
+        // 3 - To delete the record
+        int updatedRows = contactRepository.updateStatusById(status, id, ApplicationUtility.getLoggedInUser());
+        return updatedRows > 0;
     }
 
 
