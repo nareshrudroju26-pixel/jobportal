@@ -57,4 +57,5 @@ public class CaffeineCacheConfig {
         manager.setCaches(Arrays.asList(jobsCache, companiesCache, rolesCache));
         return manager;
     }
+
 }

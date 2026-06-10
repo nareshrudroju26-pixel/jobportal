@@ -43,21 +43,33 @@
         </rollingPolicy>
     </appender>
 
-  <springProfile name="prod">
-      <root level="ERROR">
-          <appender-ref ref="RollingFile"/>
-      </root>
-      <logger name="com.eazybytes.jobportal"
-              level="ERROR"
-              additivity="false">
-          <appender-ref ref="RollingFile"/>
-      </logger>
-  </springProfile>
+    <springProfile name="prod">
+        <!-- ===================== -->
+        <!-- Root Logger -->
+        <!-- ===================== -->
+        <root level="ERROR">
+            <appender-ref ref="RollingFile"/>
+        </root>
+        <!-- ===================== -->
+        <!-- Application-specific ERROR logs -->
+        <!-- ===================== -->
+        <logger name="com.eazybytes.jobportal"
+                level="ERROR"
+                additivity="false">
+            <appender-ref ref="RollingFile"/>
+        </logger>
+    </springProfile>
 
-    <springProfile name="test">
+    <springProfile name="qa">
+        <!-- ===================== -->
+        <!-- Root Logger -->
+        <!-- ===================== -->
         <root level="INFO">
             <appender-ref ref="RollingFile"/>
         </root>
+        <!-- ===================== -->
+        <!-- Application-specific ERROR logs -->
+        <!-- ===================== -->
         <logger name="com.eazybytes.jobportal"
                 level="INFO"
                 additivity="false">
@@ -65,19 +77,24 @@
         </logger>
     </springProfile>
 
-    <springProfile name="dev">
+    <springProfile name="default">
+        <!-- ===================== -->
+        <!-- Root Logger -->
+        <!-- ===================== -->
         <root level="INFO">
-            <appender-ref ref="RollingFile"/>
             <appender-ref ref="Console"/>
+            <appender-ref ref="RollingFile"/>
         </root>
+        <!-- ===================== -->
+        <!-- Application-specific ERROR logs -->
+        <!-- ===================== -->
         <logger name="com.eazybytes.jobportal"
                 level="INFO"
                 additivity="false">
-            <appender-ref ref="RollingFile"/>
             <appender-ref ref="Console"/>
+            <appender-ref ref="RollingFile"/>
         </logger>
     </springProfile>
-
 
 
 </configuration>

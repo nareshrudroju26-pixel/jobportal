@@ -6,6 +6,7 @@ import com.eazybytes.jobportal.dto.ContactRequestDto;
 import com.eazybytes.jobportal.dto.ContactResponseDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -22,20 +24,21 @@ public class ContactController {
 
     private final IContactService contactService;
 
-    @PostMapping(version = "1.0")
-    public ResponseEntity<String> saveContactMessage(@RequestBody @Valid ContactRequestDto contactRequestDto) {
-
-        boolean isSaved = contactService.saveContact(contactRequestDto);
+    @PostMapping(path = "/public", version = "1.0")
+    public ResponseEntity<String> saveContactMsg(@RequestBody @Valid ContactRequestDto contactRequestDto) {
+        boolean isSaved =  contactService.saveContact(contactRequestDto);
         if (isSaved) {
-            return ResponseEntity.status(HttpStatus.CREATED).body("Contact message saved successfully.");
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body("Request processed successfully");
         } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save contact message.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Request processing failed");
         }
     }
 
     @GetMapping("/admin")
-    public ResponseEntity< List<ContactResponseDto>> fetchNewContactMessages(){
-        List<ContactResponseDto> contactResponseDtos = contactService.fetchNewContactMessages();
+    public ResponseEntity<List<ContactResponseDto>> fetchNewContactMsgs() {
+        List<ContactResponseDto> contactResponseDtos = contactService.fetchNewContactMsgs();
         return ResponseEntity.status(HttpStatus.OK).body(contactResponseDtos);
     }
 
@@ -60,7 +63,7 @@ public class ContactController {
     }
 
     @PatchMapping("/{id}/status/admin")
-    public ResponseEntity<String> closeContactMsg(@PathVariable String id) {
+    public ResponseEntity<String> closeContactMsg(@PathVariable String id)  {
         boolean isUpdated = contactService.closeContactMsg(Long.valueOf(id),
                 ApplicationConstants.CLOSED_MESSAGE);
         if (isUpdated) {
@@ -69,4 +72,5 @@ public class ContactController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to update contact message.");
         }
     }
+
 }

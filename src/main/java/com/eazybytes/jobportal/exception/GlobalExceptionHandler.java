@@ -1,8 +1,10 @@
 package com.eazybytes.jobportal.exception;
 
 import com.eazybytes.jobportal.dto.ErrorResponseDto;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -20,32 +22,44 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponseDto> handleException(Exception exception, WebRequest webRequest){
-        ErrorResponseDto errorResponseDto = new ErrorResponseDto(webRequest.getDescription(false), HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage(), LocalDateTime.now());
-         return new ResponseEntity<>(errorResponseDto,  HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<ErrorResponseDto> handleException(Exception exception, WebRequest webRequest) {
+        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
+                webRequest.getDescription(false), HttpStatus.INTERNAL_SERVER_ERROR,
+                exception.getMessage(), LocalDateTime.now());
+        return new ResponseEntity<>(errorResponseDto, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception, WebRequest webRequest){
-        Map<String, String> errorMap = new HashMap<>();
-        exception.getBindingResult().getFieldErrors().forEach(error -> {
-            errorMap.put(error.getField(), error.getDefaultMessage());
-        });
-        return new ResponseEntity<>(errorMap,  HttpStatus.BAD_REQUEST);
+    public ResponseEntity<Map<String,String>> handleException(MethodArgumentNotValidException exception) {
+        Map<String, String> errors = new HashMap<>();
+        List<FieldError> fieldErrorList = exception.getBindingResult().getFieldErrors();
+        fieldErrorList.forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
+        return ResponseEntity.badRequest().body(errors);
     }
 
     @ExceptionHandler(HandlerMethodValidationException.class)
-    public ResponseEntity<Map<String, String>> handleHandlerMethodValidationException(HandlerMethodValidationException exception, WebRequest webRequest){
-        Map<String, String> errorMap = new HashMap<>();
-        List<ParameterValidationResult> parameterValidationResults =
-                exception.getParameterValidationResults();
-        parameterValidationResults.forEach(validationResult -> {
-            String paramName = validationResult.getMethodParameter().getParameterName();
-            String message = validationResult.getResolvableErrors().stream().map(error -> error.getDefaultMessage()).collect(Collectors.joining(", "));
-            errorMap.put(paramName, message);
-        });
+    public ResponseEntity<Map<String,String>> handleException(HandlerMethodValidationException exception) {
+        Map<String, String> errors = new HashMap<>();
+        List<ParameterValidationResult> results = exception.getParameterValidationResults();
+        results.forEach(result -> {
+            String paramName = result.getMethodParameter().getParameterName();
 
-        return new ResponseEntity<>(errorMap,  HttpStatus.BAD_REQUEST);
+            // Combine all messages into a single comma-separated string
+            String combinedMessages = result.getResolvableErrors()
+                    .stream()
+                    .map(error -> error.getDefaultMessage())  // extract each message
+                    .collect(Collectors.joining(", "));       // join messages
+            errors.put(paramName, combinedMessages);
+        });
+        return ResponseEntity.badRequest().body(errors);
+    }
+
+    @ExceptionHandler(NullPointerException.class)
+    public ResponseEntity<ErrorResponseDto> handleNullException(Exception exception, WebRequest webRequest) {
+        ErrorResponseDto errorResponseDto = new ErrorResponseDto(
+                webRequest.getDescription(false), HttpStatus.INTERNAL_SERVER_ERROR,
+                "A NullPointerException occurred due to : "+exception.getMessage(), LocalDateTime.now());
+        return new ResponseEntity<>(errorResponseDto, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(RegistrationValidationException.class)
@@ -55,4 +69,5 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ex.getErrors());
     }
+
 }

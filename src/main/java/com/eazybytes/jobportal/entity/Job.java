@@ -29,9 +29,8 @@ public class Job extends BaseEntity {
     @Column(name = "title", nullable = false)
     private String title;
 
-
     @NotNull
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
@@ -129,4 +128,5 @@ public class Job extends BaseEntity {
 
     @OneToMany(mappedBy = "job")
     private Set<JobApplication> jobApplications = new LinkedHashSet<>();
+
 }

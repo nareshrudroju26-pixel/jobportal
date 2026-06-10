@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @EnableCaching
 @SpringBootApplication
-@EnableJpaAuditing(auditorAwareRef = "auditAwareImpl")
+@EnableJpaAuditing(auditorAwareRef = "auditorAwareImpl")
 @EnableConfigurationProperties(value = {CorsProperties.class})
 public class JobportalApplication {
 

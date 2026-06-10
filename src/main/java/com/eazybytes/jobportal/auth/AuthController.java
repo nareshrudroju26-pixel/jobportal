@@ -19,7 +19,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.password.CompromisedPasswordChecker;
 import org.springframework.security.authentication.password.CompromisedPasswordDecision;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,38 +42,52 @@ public class AuthController {
     private final RoleRepository roleRepository;
     private final CompromisedPasswordChecker compromisedPasswordChecker;
 
-    @PostMapping(value = "/login/public", version = "1.0")
-    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto) {
+    @PostMapping(value = "/login/public",version = "1.0")
+    public ResponseEntity<LoginResponseDto> apiLogin(@RequestBody LoginRequestDto loginRequestDto) {
         try {
-            var authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequestDto.username(), loginRequestDto.password()));
-           // generate JWT Token
-            String jwtToken = jwtUtil.generateJwtToken(authentication);
-            UserDto userDto = new UserDto();
-            var loggedInUser = (JobPortalUser)authentication.getPrincipal();
+            var resultAuthentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequestDto.username(),
+                    loginRequestDto.password()));
+            // Generate JWT token
+            String jwtToken = jwtUtil.generateJwtToken(resultAuthentication);
+            var userDto = new UserDto();
+            var loggedInUser = (JobPortalUser) resultAuthentication.getPrincipal();
             BeanUtils.copyProperties(loggedInUser, userDto);
             userDto.setRole(loggedInUser.getRole().getName());
+            userDto.setUserId(loggedInUser.getId());
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(new LoginResponseDto("Login successful", userDto, jwtToken));
-        } catch (BadCredentialsException bce) {
-            return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid username or password");
-        } catch(AuthenticationException ae){
-            return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Authentication failed");
-        } catch(Exception ex){
-            return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+                    .body(new LoginResponseDto(HttpStatus.OK.getReasonPhrase(),
+                            userDto, jwtToken));
+        } catch (BadCredentialsException ex) {
+            return buildErrorResponse(HttpStatus.UNAUTHORIZED,
+                    "Invalid username or password");
+        } catch (AuthenticationException ex) {
+            return buildErrorResponse(HttpStatus.UNAUTHORIZED,
+                    "Authentication failed");
+        } catch (Exception ex) {
+            return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "An unexpected error occurred");
         }
+
     }
 
-    @PostMapping(value = "/register/public", version = "1.0")
+    @PostMapping(value = "/register/public",version = "1.0")
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequestDto registerRequestDto) {
         JobPortalUser jobPortalUser = new JobPortalUser();
         BeanUtils.copyProperties(registerRequestDto, jobPortalUser);
         jobPortalUser.setPasswordHash(passwordEncoder.encode(registerRequestDto.password()));
-        Role role = roleRepository.findRoleByName(ApplicationConstants.ROLE_JOB_SEEKER).orElseThrow(() -> new RuntimeException("Default role not found"));
+        Role role = roleRepository.findRoleByName(ApplicationConstants.ROLE_JOB_SEEKER)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found: " +
+                        ApplicationConstants.ROLE_JOB_SEEKER));
         jobPortalUser.setRole(role);
         jobPortalUserRepository.save(jobPortalUser);
         return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
     }
-    private ResponseEntity<LoginResponseDto> buildErrorResponse(HttpStatus httpStatus, String errorMessage){
-        return ResponseEntity.status(httpStatus).body(new LoginResponseDto(errorMessage, null, null));
+
+    private ResponseEntity<LoginResponseDto> buildErrorResponse(HttpStatus status,
+            String message) {
+        return ResponseEntity
+                .status(status)
+                .body(new LoginResponseDto(message, null, null));
     }
+
 }

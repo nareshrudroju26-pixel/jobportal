@@ -1,19 +1,20 @@
 package com.eazybytes.jobportal.security;
 
+import com.eazybytes.jobportal.audit.AuditorAwareImpl;
 import com.eazybytes.jobportal.security.filter.JwtTokenValidatorFilter;
 import com.eazybytes.jobportal.security.util.CorsProperties;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.authentication.password.CompromisedPasswordChecker;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
@@ -31,19 +32,22 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 @Configuration
-@EnableWebSecurity //Optional
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class JobPortalSecurityConfig {
 
     @Qualifier("publicPaths")
     private final List<String> publicPaths;
 
-    @Qualifier("protectedPaths")
-    private final List<String> protectedPaths;
+    @Qualifier("securedPaths")
+    private final List<String> securedPaths;
 
     @Qualifier("adminPaths")
     private final List<String> adminPaths;
@@ -57,100 +61,64 @@ public class JobPortalSecurityConfig {
     private final CorsProperties corsProperties;
 
     @Bean
-    public SecurityFilterChain securityConfig(HttpSecurity http){
-        return http
-                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+    SecurityFilterChain customSecurityFilterChain(HttpSecurity http) {
+        return http.csrf(csrfConfig -> csrfConfig
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
-                .cors(corsConfig -> corsConfig.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests((requests) ->
-                        {
-                            publicPaths.forEach(path -> requests.requestMatchers(path).permitAll());
-                            adminPaths.forEach(path -> requests.requestMatchers(path).hasRole("ADMIN"));
-                            employerPaths.forEach(path -> requests.requestMatchers(path).hasRole("EMPLOYER"));
-                            jobseekerPaths.forEach(path -> requests.requestMatchers(path).hasRole("JOB_SEEKER"));
-                            protectedPaths.forEach(path -> requests.requestMatchers(path).authenticated());
-                            requests.anyRequest().denyAll();
-                        }
-                )
-                .addFilterBefore(new JwtTokenValidatorFilter(publicPaths), BasicAuthenticationFilter.class)
-                .formLogin(flc -> flc.disable())
-                .httpBasic(httpBasic -> httpBasic.disable())
+                    .cors(corsConfig -> corsConfig.configurationSource(corsConfigurationSource()))
+                    .authorizeHttpRequests(requests -> {
+                        publicPaths.forEach(path -> requests.requestMatchers(path).permitAll());
+                        adminPaths.forEach(path -> requests.requestMatchers(path).hasRole("ADMIN"));
+                        employerPaths.forEach(path -> requests.requestMatchers(path).hasRole("EMPLOYER"));
+                        jobseekerPaths.forEach(path -> requests.requestMatchers(path).hasRole("JOB_SEEKER"));
+                        securedPaths.forEach(path -> requests.requestMatchers(path).authenticated());
+                        requests.anyRequest().denyAll();
+                    })
+                     .addFilterBefore(new JwtTokenValidatorFilter(publicPaths), BasicAuthenticationFilter.class)
+                    .formLogin(flc -> flc.disable())
+                    .httpBasic(hbc -> hbc.disable())
                 .exceptionHandling(exception -> exception
-                                .accessDeniedHandler((request, response, accessDeniedException) -> {
-                                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                                    response.setContentType("application/json");
-                                    response.getWriter().write("{\"error\": \"Access Denied\", \"message\": \"You don't have permission to access this resource\"}");
-                                })
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             response.setContentType("application/json");
-                            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Authentication required\"}");
+                            response.getWriter().write("{\"error\": \"Access Denied\", \"message\": \"You don't have permission to access this resource\"}");
                         })
+//                        .authenticationEntryPoint((request, response, authException) -> {
+//                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//                            response.setContentType("application/json");
+//                            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Authentication required\"}");
+//                        })
+
                 )
-                .build();
+                    .build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins()); // Replace with your allowed origins
-        configuration.setAllowedHeaders(corsProperties.getAllowedHeaders()); // Allow all headers
-        configuration.setAllowedMethods(corsProperties.getAllowedMethods()); // Allow all HTTP methods
-        configuration.setAllowCredentials(corsProperties.getAllowCredentials());
-        configuration.setMaxAge(corsProperties.getMaxAge()); // Set max age for preflight requests
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(corsProperties.getAllowedOrigins());
+        config.setAllowedMethods(corsProperties.getAllowedMethods());
+        config.setAllowedHeaders(corsProperties.getAllowedHeaders());
+        config.setAllowCredentials(corsProperties.getAllowCredentials());
+        config.setMaxAge(corsProperties.getMaxAge());
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Apply CORS settings to all endpoints
-        return source; // Replace with actual CorsConfigurationSource implementation
-    }
-
-  /*  @Bean
-    public UserDetailsService userDetailsService(){
-       var  user1 =  User.builder()
-                .username("naresh")
-                .password("$2a$10$edGGOoAyZDuv8c9iJvbYne6rBhyWHUtPnpGHBPrUyVc4MPkh7NsPa")
-                .roles("ADMIN")
-                .build();
-
-        var  user2 =  User.builder()
-                .username("mayan")
-                .password("$2a$10$1GphS/ZoOij.LWEs.AJtxOprUam00hE13AQzaNM0y5Y4P15610KYy")
-                .roles("USER")
-                .build();
-
-       return new InMemoryUserDetailsManager(user1, user2);
-    }*/
-
-    @Bean
-    public PasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationProvider authenticationProvider){
+    public AuthenticationManager authenticationManager(AuthenticationProvider authenticationProvider) {
         return new ProviderManager(authenticationProvider);
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
     public CompromisedPasswordChecker compromisedPasswordChecker() {
         return new HaveIBeenPwnedRestApiPasswordChecker();
     }
-
-   /* @Bean
-    public SecurityFilterChain securityConfig(HttpSecurity http){
-        return http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests((requests) ->
-                        requests.requestMatchers("/api/request", "/api/companies").permitAll()
-                                // .requestMatchers(RegexRequestMatcher.regexMatcher("/api/contacts/*")).authenticated()
-                                .requestMatchers("/api/contacts").authenticated()
-                                // Allow Swagger URLs
-                                .requestMatchers("/api/v3/api-docs/**",
-                                        "/swagger-ui/**",
-                                        "/swagger-ui.html").permitAll()
-                )
-                .formLogin(flc -> flc.disable())
-                .httpBasic(Customizer.withDefaults())
-                .build();
-    }*/
 }

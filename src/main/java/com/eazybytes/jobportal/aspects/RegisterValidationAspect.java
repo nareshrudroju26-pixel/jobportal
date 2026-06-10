@@ -19,17 +19,17 @@ import java.util.Optional;
 
 @Aspect
 @Component
-@Slf4j
 @RequiredArgsConstructor
+@Slf4j
 public class RegisterValidationAspect {
 
     private final CompromisedPasswordChecker compromisedPasswordChecker;
     private final JobPortalUserRepository jobPortalUserRepository;
 
     @Before("""
-            execution(* com.eazybytes.jobportal.auth.AuthController
-            .registerUser(..))
-            """)
+        execution(* com.eazybytes.jobportal.auth.AuthController
+        .registerUser(..))
+        """)
     public void validateBeforeRegister(JoinPoint joinPoint) {
         Object[] args = joinPoint.getArgs();
         RegisterRequestDto request = (RegisterRequestDto) args[0];
@@ -66,4 +66,5 @@ public class RegisterValidationAspect {
 
         log.info("✅ Registration validation passed");
     }
+
 }

@@ -26,14 +26,13 @@ public class CompanyServiceImpl implements ICompanyService {
 
     private final CompanyRepository companyRepository;
 
-
     @Override
     public List<CompanyDto> getAllCompanies() {
-        List<Company> companyList =companyRepository.fetchCompaniesWithJobsByStatus(ApplicationConstants.JOB_STATUS_ACTIVE);
+        List<Company> companyList =companyRepository.fetchCompaniesWithJobsByStatus(ApplicationConstants.ACTIVE_STATUS);
         return companyList.stream().map(this::transformCompanyToDto).collect(Collectors.toList());
     }
 
-    @Cacheable( "companies")
+    @Cacheable("companies")
     @Override
     public List<CompanyDto> getAllCompaniesForAdmin() {
         List<Company> companyList =companyRepository.findAll();
@@ -68,7 +67,7 @@ public class CompanyServiceImpl implements ICompanyService {
 
     private CompanyDto transformCompanyToDto(Company company) {
         List<JobDto> jobDtos = company.getJobs().stream()
-                .map(ApplicationUtility::transformJobToDto)
+                .map(job -> ApplicationUtility.transformJobToDto(job))
                 .collect(Collectors.toList());
         return new CompanyDto(company.getId(), company.getName(), company.getLogo(),
                 company.getIndustry(), company.getSize(), company.getRating(),

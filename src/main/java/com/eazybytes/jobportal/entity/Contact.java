@@ -7,14 +7,14 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 
-@Entity
-@Table(name = "contacts")
 @Getter
 @Setter
+@Entity
 @NamedQueries({
         @NamedQuery(name= "Contact.updateStatusById",
-                query = "UPDATE Contact c SET c.status = :status, c.updatedAt = CURRENT_TIMESTAMP, c.updatedBy = :updatedBy WHERE c.id = :id")
+        query = "UPDATE Contact c SET c.status = :status, c.updatedAt = CURRENT_TIMESTAMP, c.updatedBy = :updatedBy WHERE c.id = :id")
 })
+@Table(name = "contacts")
 public class Contact extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,4 +40,5 @@ public class Contact extends BaseEntity {
 
     @Column(name = "user_type", nullable = false, length = 50)
     private String userType;
+
 }

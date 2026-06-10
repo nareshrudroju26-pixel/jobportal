@@ -51,7 +51,7 @@ public class CompanyController {
 
     @PutMapping(path = "/{id}/admin", version = "1.0")
     public ResponseEntity<String> updateCompanyDetails(@PathVariable @NotBlank String id,
-                                                       @RequestBody @Valid CompanyDto companyDto) {
+            @RequestBody @Valid CompanyDto companyDto) {
         boolean isUpdated = companyService.updateCompanyDetails(Long.valueOf(id),companyDto);
         if (isUpdated) {
             return ResponseEntity.status(HttpStatus.OK).body("Company details updated successfully");

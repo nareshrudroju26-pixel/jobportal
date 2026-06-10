@@ -1,9 +1,23 @@
 package com.eazybytes.jobportal.user.service.impl;
 
 import com.eazybytes.jobportal.constants.ApplicationConstants;
-import com.eazybytes.jobportal.dto.*;
-import com.eazybytes.jobportal.entity.*;
-import com.eazybytes.jobportal.repository.*;
+import com.eazybytes.jobportal.dto.ApplyJobRequestDto;
+import com.eazybytes.jobportal.dto.JobApplicationDto;
+import com.eazybytes.jobportal.dto.JobDto;
+import com.eazybytes.jobportal.dto.ProfileDto;
+import com.eazybytes.jobportal.dto.UserDto;
+import com.eazybytes.jobportal.entity.Company;
+import com.eazybytes.jobportal.entity.Job;
+import com.eazybytes.jobportal.entity.JobApplication;
+import com.eazybytes.jobportal.entity.JobPortalUser;
+import com.eazybytes.jobportal.entity.Profile;
+import com.eazybytes.jobportal.entity.Role;
+import com.eazybytes.jobportal.repository.CompanyRepository;
+import com.eazybytes.jobportal.repository.JobApplicationRepository;
+import com.eazybytes.jobportal.repository.JobPortalUserRepository;
+import com.eazybytes.jobportal.repository.JobRepository;
+import com.eazybytes.jobportal.repository.ProfileRepository;
+import com.eazybytes.jobportal.repository.RoleRepository;
 import com.eazybytes.jobportal.user.service.IUserService;
 import com.eazybytes.jobportal.util.ApplicationUtility;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -83,20 +97,10 @@ public class UserServiceImpl implements IUserService {
         return mapToUserDto(user);
     }
 
-    private UserDto mapToUserDto(JobPortalUser user) {
-        UserDto dto = new UserDto();
-        BeanUtils.copyProperties(user, dto);
-        dto.setUserId(user.getId());
-        dto.setRole(user.getRole() != null ? user.getRole().getName() : null);
-        dto.setCompanyId(user.getCompany() != null ? user.getCompany().getId() : null);
-        dto.setCompanyName(user.getCompany() != null ? user.getCompany().getName() : null);
-        return dto;
-    }
-
     @Transactional
     @Override
     public ProfileDto createOrUpdateProfile(String userEmail, String profileJson,
-                                            MultipartFile profilePicture, MultipartFile resume) throws JsonProcessingException {
+            MultipartFile profilePicture, MultipartFile resume) throws JsonProcessingException {
         JobPortalUser user = userRepository.findJobPortalUserByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
         Profile profile = user.getProfile();
@@ -200,7 +204,7 @@ public class UserServiceImpl implements IUserService {
         // Increment applications count
         job.setApplicationsCount(job.getApplicationsCount() != null ? job.getApplicationsCount() + 1 : 1);
         // jobRepository.save(job); - Optional
-        return mapToJobApplicationDto(saved);
+        return ApplicationUtility.mapToJobApplicationDto(saved);
     }
 
     @Transactional
@@ -229,50 +233,13 @@ public class UserServiceImpl implements IUserService {
         // Validate if user exists
         JobPortalUser user = userRepository.findJobPortalUserByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + userEmail));
-        return user.getJobApplications().stream().map(this::mapToJobApplicationDto)
+        return user.getJobApplications().stream().map(jobApp ->
+                        ApplicationUtility.mapToJobApplicationDto(jobApp))
                 .collect(Collectors.toList());
     }
 
-    private JobApplicationDto mapToJobApplicationDto(JobApplication application) {
-        // Map profile if exists
-        ProfileDto profileDto = null;
-        Profile profile = application.getUser().getProfile();
-        if (profile != null) {
-            profileDto = new ProfileDto(
-                    profile.getId(),
-                    profile.getUser().getId(),
-                    profile.getJobTitle(),
-                    profile.getLocation(),
-                    profile.getExperienceLevel(),
-                    profile.getProfessionalBio(),
-                    profile.getPortfolioWebsite(),
-                    profile.getProfilePicture(),
-                    profile.getProfilePictureName(),
-                    profile.getProfilePictureType(),
-                    profile.getResume(),
-                    profile.getResumeName(),
-                    profile.getResumeType(),
-                    profile.getCreatedAt(),
-                    profile.getUpdatedAt()
-            );
-        }
-        return new JobApplicationDto(
-                application.getId(),
-                application.getUser().getId(),
-                application.getUser().getName(),
-                application.getUser().getEmail(),
-                application.getUser().getMobileNumber(),
-                profileDto,
-                ApplicationUtility.transformJobToDto(application.getJob()),
-                application.getAppliedAt(),
-                application.getStatus(),
-                application.getCoverLetter(),
-                application.getNotes()
-        );
-    }
-
     private Profile mapToProfile(Profile profile, ProfileDto profileDto,
-                                 MultipartFile profilePicture, MultipartFile resume) {
+            MultipartFile profilePicture, MultipartFile resume) {
         // Update text fields
         profile.setJobTitle(profileDto.jobTitle());
         profile.setLocation(profileDto.location());
@@ -318,6 +285,16 @@ public class UserServiceImpl implements IUserService {
                     profile.getProfilePictureName(), profile.getProfilePictureType(), null,
                     profile.getResumeName(), profile.getResumeType(), profile.getCreatedAt(), profile.getUpdatedAt());
         }
+        return dto;
+    }
+
+    private UserDto mapToUserDto(JobPortalUser user) {
+        UserDto dto = new UserDto();
+        BeanUtils.copyProperties(user, dto);
+        dto.setUserId(user.getId());
+        dto.setRole(user.getRole() != null ? user.getRole().getName() : null);
+        dto.setCompanyId(user.getCompany() != null ? user.getCompany().getId() : null);
+        dto.setCompanyName(user.getCompany() != null ? user.getCompany().getName() : null);
         return dto;
     }
 }

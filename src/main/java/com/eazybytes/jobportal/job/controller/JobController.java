@@ -1,5 +1,6 @@
 package com.eazybytes.jobportal.job.controller;
 
+import com.eazybytes.jobportal.dto.ApplyJobRequestDto;
 import com.eazybytes.jobportal.dto.JobApplicationDto;
 import com.eazybytes.jobportal.dto.JobDto;
 import com.eazybytes.jobportal.dto.UpdateJobApplicationDto;
@@ -74,4 +75,5 @@ public class JobController {
         }
         return ResponseEntity.ok("Application updated successfully");
     }
+
 }
