@@ -6,6 +6,8 @@ import com.eazybytes.jobportal.entity.JobPortalUser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
@@ -17,9 +19,19 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@PropertySource(value = "classpath:jwt.properties")
 public class JwtUtil {
 
     private final Environment environment;
+
+    @Value("${jwt.issuer:Job Portal}")
+    private String jwtIssuer;
+
+    @Value("${jwt.subject:JWT Token}")
+    private String jwtSubject;
+
+    @Value("${jwt.expiration.hours:1}")
+    private int jwtExpirationHours;
 
     public String generateJwtToken(Authentication authentication){
        String jwtToken;
@@ -27,14 +39,14 @@ public class JwtUtil {
         String secret = environment.getProperty(ApplicationConstants.JWT_SECRET_KEY, ApplicationConstants.JWT_SECRET_DEFAULT_VALUE);
         SecretKey secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         jwtToken = Jwts.builder()
-                .issuer("Job Portal")
+                .issuer(jwtIssuer)
                 .issuedAt(new java.util.Date())
-                .setSubject("Jwt Token")
+                .setSubject(jwtSubject)
                 .claim("email", fetchedUser.getEmail())
                 .claim("mobileNumber", fetchedUser.getMobileNumber())
                 .claim("name", fetchedUser.getName())
                 .claim("roles", authentication.getAuthorities().stream().map(auth -> auth.getAuthority()).collect(Collectors.joining(",")))
-                .expiration(new java.util.Date(new java.util.Date().getTime() + 24*60*60*1000))
+                .expiration(new java.util.Date(new java.util.Date().getTime() + jwtExpirationHours))
                 .signWith(secretKey)
                 .compact();
 

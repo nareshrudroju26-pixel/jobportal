@@ -1,6 +1,7 @@
 package com.eazybytes.jobportal.security;
 
 import com.eazybytes.jobportal.security.filter.JwtTokenValidatorFilter;
+import com.eazybytes.jobportal.security.util.CorsProperties;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,8 @@ public class JobPortalSecurityConfig {
     @Qualifier("jobseekerPaths")
     private final List<String> jobseekerPaths;
 
+    private final CorsProperties corsProperties;
+
     @Bean
     public SecurityFilterChain securityConfig(HttpSecurity http){
         return http
@@ -90,11 +93,11 @@ public class JobPortalSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // Replace with your allowed origins
-        configuration.setAllowedHeaders(Collections.singletonList("*")); // Allow all headers
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L); // Set max age for preflight requests
+        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins()); // Replace with your allowed origins
+        configuration.setAllowedHeaders(corsProperties.getAllowedHeaders()); // Allow all headers
+        configuration.setAllowedMethods(corsProperties.getAllowedMethods()); // Allow all HTTP methods
+        configuration.setAllowCredentials(corsProperties.getAllowCredentials());
+        configuration.setMaxAge(corsProperties.getMaxAge()); // Set max age for preflight requests
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration); // Apply CORS settings to all endpoints
